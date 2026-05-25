@@ -37,6 +37,8 @@
       .surprise-card {
         position: relative;
         isolation: isolate;
+        touch-action: manipulation;
+        user-select: none;
         width: min(100%, 26rem);
         padding: clamp(1rem, 4vw, 1.4rem);
         border: 0;
@@ -124,24 +126,26 @@
         pointer-events: none;
         opacity: 0;
         text-shadow: 0 3px 10px rgba(198, 132, 143, 0.16);
-        animation: float-heart 1.15s ease-out var(--heart-delay) forwards;
+        animation:
+          splash-heart var(--heart-duration) cubic-bezier(0.15, 0.62, 0.32, 1)
+          var(--heart-delay) forwards;
       }
 
-      @keyframes float-heart {
+      @keyframes splash-heart {
         0% {
           opacity: 0;
-          transform: translate(-50%, -38%) scale(0.35) rotate(0deg);
+          transform: translate(-50%, -50%) scale(0.22) rotate(0deg);
         }
 
-        15% {
-          opacity: 0.82;
+        18% {
+          opacity: var(--heart-opacity);
         }
 
         100% {
           opacity: 0;
           transform:
-            translate(calc(-50% + var(--heart-drift)), calc(-50% - 5.3rem))
-            scale(1.14)
+            translate(calc(-50% + var(--heart-x)), calc(-50% + var(--heart-y)))
+            scale(var(--heart-scale))
             rotate(var(--heart-turn));
         }
       }
@@ -208,42 +212,69 @@
       const afterImage = "assets/Forget_Me_Not_&_Iris_Flower.png";
 
       let hasChanged = false;
+      let holdTimer = null;
+      let holdInterval = null;
+      let heldPointer = null;
+      let isHolding = false;
+      let ignoreClicksUntil = 0;
 
       surpriseImage.src = firstImage;
 
       const preloadedAfterImage = new Image();
+      preloadedAfterImage.decoding = "async";
+      const afterImageReady = new Promise((resolve) => {
+        preloadedAfterImage.addEventListener("load", async () => {
+          try {
+            await preloadedAfterImage.decode();
+          } catch (error) {
+            // The loaded image can still be displayed if decode() is unavailable.
+          }
+          resolve();
+        }, { once: true });
+        preloadedAfterImage.addEventListener("error", resolve, { once: true });
+      });
       preloadedAfterImage.src = afterImage;
 
-      function createHeartBubbles(event) {
+      function createHeartBurst(clientX, clientY, isHoldBurst = false) {
         const cardBounds = surpriseCard.getBoundingClientRect();
-        const originX = event.clientX - cardBounds.left;
-        const originY = event.clientY - cardBounds.top;
+        const originX = clientX - cardBounds.left;
+        const originY = clientY - cardBounds.top;
+        const count = isHoldBurst ? 7 : 10;
+        const startingAngle = Math.random() * Math.PI * 2;
 
-        for (let index = 0; index < 4; index += 1) {
+        for (let index = 0; index < count; index += 1) {
           const heart = document.createElement("span");
-          const spread = (index - 1.5) * 18 + (Math.random() * 10 - 5);
+          const angle = startingAngle + (Math.PI * 2 * index) / count + (Math.random() - 0.5) * 0.24;
+          const distance = (isHoldBurst ? 48 : 72) + Math.random() * (isHoldBurst ? 54 : 58);
+          const travelX = Math.cos(angle) * distance;
+          const travelY = Math.sin(angle) * distance - 8;
 
           heart.className = "floating-heart";
           heart.textContent = "\u2661";
           heart.setAttribute("aria-hidden", "true");
           heart.style.left = `${originX}px`;
           heart.style.top = `${originY}px`;
-          heart.style.setProperty("--heart-size", `${1 + index * 0.14}rem`);
-          heart.style.setProperty("--heart-delay", `${index * 38}ms`);
-          heart.style.setProperty("--heart-drift", `${spread}px`);
-          heart.style.setProperty("--heart-turn", `${spread / 3}deg`);
+          heart.style.setProperty("--heart-size", `${0.86 + Math.random() * 0.7}rem`);
+          heart.style.setProperty("--heart-delay", `${Math.random() * 42}ms`);
+          heart.style.setProperty("--heart-duration", `${780 + Math.random() * 360}ms`);
+          heart.style.setProperty("--heart-opacity", `${0.48 + Math.random() * 0.34}`);
+          heart.style.setProperty("--heart-scale", `${0.86 + Math.random() * 0.44}`);
+          heart.style.setProperty("--heart-x", `${travelX}px`);
+          heart.style.setProperty("--heart-y", `${travelY}px`);
+          heart.style.setProperty("--heart-turn", `${(Math.random() - 0.5) * 38}deg`);
 
           surpriseCard.appendChild(heart);
           heart.addEventListener("animationend", () => heart.remove(), { once: true });
         }
       }
 
-      function revealBlessing() {
+      async function revealBlessing() {
         if (hasChanged) {
           return;
         }
 
         hasChanged = true;
+        await afterImageReady;
         revealArea.classList.add("is-fading");
 
         window.setTimeout(() => {
@@ -259,10 +290,58 @@
         }, 360);
       }
 
+      function startHoldEffect(event) {
+        if (!hasChanged || blessingMessage.hidden || event.button > 0) {
+          return;
+        }
+
+        heldPointer = {
+          id: event.pointerId,
+          x: event.clientX,
+          y: event.clientY
+        };
+
+        holdTimer = window.setTimeout(() => {
+          isHolding = true;
+          createHeartBurst(heldPointer.x, heldPointer.y, true);
+          holdInterval = window.setInterval(() => {
+            createHeartBurst(heldPointer.x, heldPointer.y, true);
+          }, 180);
+        }, 360);
+      }
+
+      function updateHoldPosition(event) {
+        if (heldPointer && heldPointer.id === event.pointerId) {
+          heldPointer.x = event.clientX;
+          heldPointer.y = event.clientY;
+        }
+      }
+
+      function stopHoldEffect() {
+        const endedHolding = isHolding;
+
+        window.clearTimeout(holdTimer);
+        window.clearInterval(holdInterval);
+        holdTimer = null;
+        holdInterval = null;
+        heldPointer = null;
+        isHolding = false;
+
+        if (endedHolding) {
+          ignoreClicksUntil = performance.now() + 600;
+        }
+      }
+
+      surpriseCard.addEventListener("pointerdown", startHoldEffect);
+      surpriseCard.addEventListener("pointermove", updateHoldPosition);
+      surpriseCard.addEventListener("pointerup", stopHoldEffect);
+      surpriseCard.addEventListener("pointercancel", stopHoldEffect);
+      surpriseCard.addEventListener("pointerleave", stopHoldEffect);
+
       surpriseCard.addEventListener("click", (event) => {
         if (hasChanged) {
-          if (!blessingMessage.hidden) {
-            createHeartBubbles(event);
+          if (!blessingMessage.hidden && performance.now() >= ignoreClicksUntil) {
+            createHeartBurst(event.clientX, event.clientY);
           }
           return;
         }
