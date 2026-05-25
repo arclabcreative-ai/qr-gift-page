@@ -90,7 +90,9 @@
 
       .blessing-card {
         width: 100%;
-        margin-top: 0.15rem;
+        position: relative;
+        z-index: 1;
+        margin-top: clamp(-2.45rem, -8vw, -1.95rem);
         padding: clamp(1.1rem, 5vw, 1.35rem);
         border-radius: 1.35rem;
         background: var(--blessing);
@@ -98,7 +100,7 @@
         color: var(--text);
         font-size: clamp(1rem, 4.1vw, 1.06rem);
         line-height: 1.8;
-        text-align: left;
+        text-align: center;
       }
 
       .blessing-card p {
