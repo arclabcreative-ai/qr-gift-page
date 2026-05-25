@@ -35,6 +35,8 @@
       }
 
       .surprise-card {
+        position: relative;
+        isolation: isolate;
         width: min(100%, 26rem);
         padding: clamp(1rem, 4vw, 1.4rem);
         border: 0;
@@ -111,6 +113,39 @@
         margin-top: 0.9rem;
       }
 
+      .floating-heart {
+        position: absolute;
+        z-index: 2;
+        left: 0;
+        top: 0;
+        color: rgba(204, 143, 151, 0.78);
+        font-size: var(--heart-size);
+        line-height: 1;
+        pointer-events: none;
+        opacity: 0;
+        text-shadow: 0 3px 10px rgba(198, 132, 143, 0.16);
+        animation: float-heart 1.15s ease-out var(--heart-delay) forwards;
+      }
+
+      @keyframes float-heart {
+        0% {
+          opacity: 0;
+          transform: translate(-50%, -38%) scale(0.35) rotate(0deg);
+        }
+
+        15% {
+          opacity: 0.82;
+        }
+
+        100% {
+          opacity: 0;
+          transform:
+            translate(calc(-50% + var(--heart-drift)), calc(-50% - 5.3rem))
+            scale(1.14)
+            rotate(var(--heart-turn));
+        }
+      }
+
       [hidden] {
         display: none;
       }
@@ -118,6 +153,10 @@
       @media (prefers-reduced-motion: reduce) {
         .reveal-area {
           transition-duration: 1ms;
+        }
+
+        .floating-heart {
+          animation-duration: 1ms;
         }
       }
     </style>
@@ -175,6 +214,30 @@
       const preloadedAfterImage = new Image();
       preloadedAfterImage.src = afterImage;
 
+      function createHeartBubbles(event) {
+        const cardBounds = surpriseCard.getBoundingClientRect();
+        const originX = event.clientX - cardBounds.left;
+        const originY = event.clientY - cardBounds.top;
+
+        for (let index = 0; index < 4; index += 1) {
+          const heart = document.createElement("span");
+          const spread = (index - 1.5) * 18 + (Math.random() * 10 - 5);
+
+          heart.className = "floating-heart";
+          heart.textContent = "\u2661";
+          heart.setAttribute("aria-hidden", "true");
+          heart.style.left = `${originX}px`;
+          heart.style.top = `${originY}px`;
+          heart.style.setProperty("--heart-size", `${1 + index * 0.14}rem`);
+          heart.style.setProperty("--heart-delay", `${index * 38}ms`);
+          heart.style.setProperty("--heart-drift", `${spread}px`);
+          heart.style.setProperty("--heart-turn", `${spread / 3}deg`);
+
+          surpriseCard.appendChild(heart);
+          heart.addEventListener("animationend", () => heart.remove(), { once: true });
+        }
+      }
+
       function revealBlessing() {
         if (hasChanged) {
           return;
@@ -196,7 +259,16 @@
         }, 360);
       }
 
-      surpriseCard.addEventListener("click", revealBlessing);
+      surpriseCard.addEventListener("click", (event) => {
+        if (hasChanged) {
+          if (!blessingMessage.hidden) {
+            createHeartBubbles(event);
+          }
+          return;
+        }
+
+        revealBlessing();
+      });
 
       surpriseCard.addEventListener("keydown", (event) => {
         if (event.key === "Enter" || event.key === " ") {
