@@ -34,6 +34,10 @@
         font-family: "Noto Sans Thai", "Sarabun", "Thonburi", "Tahoma", sans-serif;
       }
 
+      body.is-revealed {
+        place-items: start center;
+      }
+
       .surprise-card {
         position: relative;
         isolation: isolate;
@@ -122,6 +126,42 @@
         letter-spacing: 0.03em;
       }
 
+      .extra-memory {
+        width: 100%;
+        margin-top: 0.55rem;
+      }
+
+      .scroll-hint {
+        margin: 0 0 0.9rem;
+        color: var(--muted);
+        font-size: 0.94rem;
+        line-height: 1.7;
+      }
+
+      .scroll-hint span {
+        display: block;
+        font-size: 1.2rem;
+        animation: soft-bounce 1.8s ease-in-out infinite;
+      }
+
+      .memory-image {
+        display: block;
+        width: 100%;
+        height: auto;
+        border-radius: 1.25rem;
+        box-shadow: 0 12px 30px rgba(102, 68, 61, 0.08);
+      }
+
+      @keyframes soft-bounce {
+        0%, 100% {
+          transform: translateY(0);
+        }
+
+        50% {
+          transform: translateY(4px);
+        }
+      }
+
       .floating-heart {
         position: absolute;
         z-index: 2;
@@ -166,6 +206,10 @@
           transition-duration: 1ms;
         }
 
+        .scroll-hint span {
+          animation: none;
+        }
+
         .floating-heart {
           animation-duration: 1ms;
         }
@@ -205,6 +249,21 @@
           <p>ในวันที่เธอเหนื่อยหรืออยากพักใจ</p>
           <p class="blessing-signature">--For you Angie--</p>
         </div>
+
+        <section class="extra-memory" id="extraMemory" hidden>
+          <p class="scroll-hint">
+            เลื่อนลงอีกนิดนะ
+            <span aria-hidden="true">&#8595;</span>
+          </p>
+          <img
+            class="memory-image"
+            id="memoryImage"
+            data-src="assets/Angie01.png"
+            loading="lazy"
+            decoding="async"
+            alt="ภาพความทรงจำพิเศษสำหรับ Angie"
+          >
+        </section>
       </section>
     </main>
 
@@ -214,10 +273,13 @@
       const surpriseImage = document.getElementById("surpriseImage");
       const initialMessage = document.getElementById("initialMessage");
       const blessingMessage = document.getElementById("blessingMessage");
+      const extraMemory = document.getElementById("extraMemory");
+      const memoryImage = document.getElementById("memoryImage");
 
       // Edit the image file names here if you replace or rename either PNG.
       const firstImage = "assets/Meow.png";
       const afterImage = "assets/Forget_Me_Not_&_Iris_Flower.png";
+      const memoryImageFile = "assets/Angie01.png";
 
       let hasChanged = false;
       let holdTimer = null;
@@ -282,14 +344,17 @@
         }
 
         hasChanged = true;
+        memoryImage.src = memoryImageFile;
         await afterImageReady;
         revealArea.classList.add("is-fading");
 
         window.setTimeout(() => {
+          document.body.classList.add("is-revealed");
           surpriseImage.src = afterImage;
           surpriseImage.alt = "ช่อดอกไม้สำหรับคำอวยพรแสนอบอุ่น";
           initialMessage.hidden = true;
           blessingMessage.hidden = false;
+          extraMemory.hidden = false;
           surpriseCard.setAttribute("aria-label", "ข้อความอวยพรได้เปิดแล้ว");
 
           window.requestAnimationFrame(() => {

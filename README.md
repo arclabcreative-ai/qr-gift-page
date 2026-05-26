@@ -1,6 +1,6 @@
 # Sweet QR Surprise Page
 
-This is a deliberately simple static landing page for a QR-code surprise. It uses only `index.html` and two PNG images, so it can be opened locally or deployed to any static hosting service.
+This is a deliberately simple static landing page for a QR-code surprise. It uses only `index.html` and PNG images, so it can be opened locally or deployed to any static hosting service.
 
 ## Files Used By The Page
 
@@ -11,24 +11,28 @@ index.html
 assets/
   Meow.png
   Forget_Me_Not_&_Iris_Flower.png
+  Angie01.png
 README.md
 ```
 
 - `assets/Meow.png` is shown before the visitor taps.
 - `assets/Forget_Me_Not_&_Iris_Flower.png` is shown after the visitor taps.
+- `assets/Angie01.png` appears further down after the blessing message.
 
 ## Place Or Replace The PNG Files
 
 1. Create an `assets` folder beside `index.html` if it does not already exist.
 2. Put the first image in `assets/` and name it `Meow.png`.
 3. Put the revealed image in `assets/` and name it `Forget_Me_Not_&_Iris_Flower.png`.
-4. Keep PNG files transparent if transparency is part of the artwork. The page displays images without cropping them.
+4. Put the extra memory image in `assets/` and name it `Angie01.png`.
+5. Keep PNG files transparent if transparency is part of the artwork. The page displays images without cropping them.
 
 To use different filenames, edit these two values near the bottom of `index.html`:
 
 ```js
 const firstImage = "assets/Meow.png";
 const afterImage = "assets/Forget_Me_Not_&_Iris_Flower.png";
+const memoryImageFile = "assets/Angie01.png";
 ```
 
 Also update the initial image `src="assets/Meow.png"` in the `<img>` element so the first image appears before JavaScript runs.
@@ -57,6 +61,7 @@ Double-click `index.html`, or drag it into a browser window. Tap or click anywhe
 
 - It should first show `assets/Meow.png` with the invitation text.
 - On the first tap, it should fade to `assets/Forget_Me_Not_&_Iris_Flower.png` and reveal the blessing card.
+- Scrolling down should reveal `assets/Angie01.png` below the blessing message.
 - Further taps should not change it back.
 
 Because all file paths are relative and there are no dependencies, opening `index.html` directly works without a local server.
